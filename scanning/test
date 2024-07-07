@@ -1,0 +1,74 @@
+import requests # type: ignore
+import nmap # type: ignore
+from bs4 import BeautifulSoup # type: ignore
+
+# Scan for SQL Injection
+def scan_sql_injection(url):
+    # List of SQL injection payloads to test
+    payloads = ["'", "' OR '1'='1", '" OR "1"="1', "admin' --", "admin' #", "admin'/*"]
+    
+    # Common SQL error message indicators
+    sql_errors = ["sql", "syntax", "mysql", "oracle", "native client", "odbc", "psql", "db2"]
+
+    for payload in payloads:
+        # Append the payload to the URL query parameter
+        target_url = url + payload
+        
+        # Send a GET request to the target URL with the payload
+        response = requests.get(target_url)
+        
+        # Check if the response contains any SQL error indicators
+        for error in sql_errors:
+            if error in response.text.lower():
+                print(f"Potential SQL Injection vulnerability found at {target_url}")
+                break
+            else:
+                print(f"This webpage has no SQL vulnerabilities")
+# Scan for XSS
+def scan_xss(url):
+    payloads = ["<script>alert(1)</script>", "\";alert(1);//"]
+    for payload in payloads:
+        r = requests.get(url + payload)
+        if payload in r.text:
+            print(f"Potential XSS vulnerability found at {url + payload}")
+
+def scan_web_application(url):
+    print(f"Scanning {url} for vulnerabilities...")
+    scan_sql_injection(url)
+    scan_xss(url)
+
+# Scan open ports
+def scan_open_ports(target):
+    nm = nmap.PortScanner()
+    nm.scan(target, '1-1024')  # Scan ports 1 to 1024
+    for host in nm.all_hosts():
+        print(f"Host: {host}")
+        for proto in nm[host].all_protocols():
+            print(f"Protocol: {proto}")
+            lport = nm[host][proto].keys()
+            for port in lport:
+                print(f"Port: {port}\tState: {nm[host][proto][port]['state']}")
+
+# Main function
+def main():
+    while True:
+        print("\nVulnerability Scanner")
+        print("1. Scan web application")
+        print("2. Scan network")
+        print("3. Exit")
+
+        choice = input("Enter your choice: ")
+
+        if choice == '1':
+            url = input("Enter the URL of the web application: ")
+            scan_web_application(url)
+        elif choice == '2':
+            target = input("Enter the target IP address: ")
+            scan_open_ports(target)
+        elif choice == '3':
+            break
+        else:
+            print("Invalid choice, please try again.")
+
+if __name__ == "__main__":
+    main()

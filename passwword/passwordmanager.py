@@ -1,7 +1,9 @@
 import getpass
 import hashlib
 import json
-from cryptography.fernet import Fernet # type: ignore
+import string
+import random
+from cryptography.fernet import Fernet
 
 # Generate or load the key
 key = Fernet.generate_key()
@@ -96,6 +98,12 @@ def delete_password(service):
         del passwords[service]
         save_passwords()
 
+# Password creation function
+def generate_password(length=12):
+    characters = string.ascii_letters + string.digits + string.punctuation
+    password = ''.join(random.choice(characters) for i in range(length))
+    return password
+
 # Command-line interface
 def main():
     load_passwords()
@@ -108,14 +116,18 @@ def main():
         print("2. Get password")
         print("3. Update password")
         print("4. Delete password")
-        print("5. Exit")
+        print("5. Generate password")
+        print("6. Exit")
 
         choice = input("Enter your choice: ")
 
         if choice == '1':
             service = input("Enter the service name: ")
             username = input("Enter the username: ")
-            password = getpass.getpass("Enter the password: ")
+            password = getpass.getpass("Enter the password (leave blank to generate one): ")
+            if not password:
+                password = generate_password()
+                print(f"Generated password: {password}")
             add_password(service, username, password)
         elif choice == '2':
             service = input("Enter the service name: ")
@@ -127,12 +139,19 @@ def main():
                 print("Service not found.")
         elif choice == '3':
             service = input("Enter the service name: ")
-            new_password = getpass.getpass("Enter the new password: ")
+            new_password = getpass.getpass("Enter the new password (leave blank to generate one): ")
+            if not new_password:
+                new_password = generate_password()
+                print(f"Generated password: {new_password}")
             update_password(service, new_password)
         elif choice == '4':
             service = input("Enter the service name: ")
             delete_password(service)
         elif choice == '5':
+            length = int(input("Enter the length of the password (default 12): ") or 12)
+            generated_password = generate_password(length)
+            print(f"Generated password: {generated_password}")
+        elif choice == '6':
             break
         else:
             print("Invalid choice, please try again.")
